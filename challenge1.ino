@@ -78,7 +78,7 @@ void setup() {
 }
 
 void loop() {
-  set_period(10000);   // ✅ 고정된 값 (100us)
+  set_period(10000);
 
   for (int d = 0; d <= 100; d++) {
     set_duty(d);
@@ -91,3 +91,4 @@ void loop() {
 
   delay(300);
 }
+
