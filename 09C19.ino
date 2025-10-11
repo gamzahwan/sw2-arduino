@@ -8,7 +8,8 @@
 #define _DIST_MIN 100.0
 #define _DIST_MAX 300.0
 
-#define TIMEOUT_US ((unsigned long)((INTERVAL / 2.0) * 1000.0))
+#define PULSE_WAIT_LIMIT_US 12500UL  
+
 #define SCALE (0.001 * 0.5 * SND_VEL)
 
 #define MEDIAN_N 30
@@ -19,11 +20,6 @@
 float dist_buffer[30];
 int buf_count = 0;
 int buf_index = 0;
-
-const float EMA_ALPHA = 0.2f;
-float dist_ema = 0.0f;
-bool ema_init = false;
-
 unsigned long last_sampling_time = 0;
 
 float USS_measure(int trigPin, int echoPin);
@@ -41,14 +37,6 @@ void loop() {
   if ((millis() - last_sampling_time) < INTERVAL) return;
 
   float dist_raw = USS_measure(PIN_TRIG, PIN_ECHO);
-
-  if (!ema_init) {
-    dist_ema = dist_raw;
-    ema_init = true;
-  } else {
-    dist_ema = EMA_ALPHA * dist_raw + (1.0f - EMA_ALPHA) * dist_ema;
-  }
-
   float dist_median = median_filter_push(dist_raw);
 
   int brightness = 255;
@@ -65,7 +53,6 @@ void loop() {
 
   Serial.print("Min:"); Serial.print(_DIST_MIN, 2);
   Serial.print(",raw:"); Serial.print(dist_raw, 2);
-  Serial.print(",ema:"); Serial.print(dist_ema, 2);
   Serial.print(",median:"); Serial.print(dist_median, 2);
   Serial.print(",Max:"); Serial.print(_DIST_MAX, 2);
   Serial.println();
@@ -77,7 +64,8 @@ float USS_measure(int TRIG, int ECHO) {
   digitalWrite(TRIG, HIGH);
   delayMicroseconds(PULSE_DURATION);
   digitalWrite(TRIG, LOW);
-  unsigned long dur = pulseIn(ECHO, HIGH, TIMEOUT_US);
+
+  unsigned long dur = pulseIn(ECHO, HIGH, PULSE_WAIT_LIMIT_US);
   float dist_mm = dur * SCALE;
   return dist_mm;
 }
